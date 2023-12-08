@@ -1,0 +1,76 @@
+# Default values for helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+cronjob:
+  checkSyncTransactionCount:
+    enabled: true
+    schedule: "* * * * *"
+
+replicaCount: 2
+
+image:
+  pullSecret: gitlab-registry
+  repository: registry.gitlab.com/setel-pos/api-shifts
+  tag: master-d57f0319
+  pullPolicy: Always
+
+ports:
+- name: http
+  internalPort: 80
+
+service:
+  name: http
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  annotations: # {}
+    kubernetes.io/ingress.class: nginx
+  hosts:
+    - api.dev2.test.my
+  paths:
+    - /api/shifts
+    - /docs/shifts
+  tls: []
+  #  - secretName: shifts-tls
+  #    hosts:
+  #      - shifts.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 9000
+  failureThreshold: 1
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  successThreshold: 1
+  timeoutSeconds: 10
+livenessProbe:
+  httpGet:
+    path: /live
+    port: 9000
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  # Allow sufficient amount of time (180 seconds = periodSeconds * failureThreshold)
+  # for the registered shutdown handlers to run to completion.
+  periodSeconds: 30
+  successThreshold: 1
+  # Setting a very low timeout value (e.g. 1 second) can cause false-positive
+  # checks and service interruption.
+  timeoutSeconds: 5
+serviceAccount:
+  create: true
+  name: api-shifts
